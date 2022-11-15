@@ -7,6 +7,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
+import java.time.*;
 
 /**
  * ----------------------*    Norden Communication    *-------------------------
@@ -113,22 +114,89 @@ public class Test {
         } catch (Exception e) {
            //
         }
-        char[] ary=Hex.encodeHex(buf);
+      //  char[] ary=Hex.encodeHex(buf);
         String rec = new String(packet.getData(), StandardCharsets.UTF_8);
         String ary2=Hex.encodeHexString(buf);
 
         if(!rec.isBlank()) {
-            System.out.println("Receive1 :::: " + rec);
-            System.out.println("Receive2 :::: " + ary);
-            System.out.println("Receive3 :::: " + ary2.substring(136));
-            String cn=ary2.substring(136,142);
-            String cnv=cn.substring(4)+cn.substring(2,4)+cn.substring(0,2);
-            System.out.println("Receive3 :::: " + Long.parseLong(cnv,16));
+           // System.out.println("Receive1 :::: " + rec);
+         //   System.out.println("Receive2 :::: " + ary);
+            System.out.println("Receive3 :::: " + ary2);
+           // String cn=ary2.substring(136,142);
+            //String cnv=cn.substring(4)+cn.substring(2,4)+cn.substring(0,2);
+            //System.out.println("Receive3 :::: " + Long.parseLong(cnv,16));
             InetAddress addr = packet.getAddress();
             int prt = packet.getPort();
 
             System.out.println("####RSP###  " + addr + ":" + prt + "  ");
+            process(ary2);
         }
+    }
+
+    private static void process(final String s){
+        OldLog[] log=new OldLog[10];
+        LocalDate ld=LocalDate.now();
+        String mm=String.valueOf(ld.getMonthValue());
+        String dd=String.valueOf(ld.getDayOfMonth()+1);
+        if(ld.getMonthValue()/10==0){
+            mm="0"+mm;
+        }
+        if(ld.getDayOfMonth()/10==0){
+            dd="0"+dd;
+        }
+        String nowTm=String.valueOf(ld.getYear()-2000)+mm+dd;
+        //System.out.println(nowTm);
+        final int strt=40;
+        String timeStamp=s.substring(strt,strt+6);
+        System.out.println(timeStamp  +"   from status update");
+
+
+        final int start=124;
+        final int lng=40;
+        for(int i=0;i<10;i++){
+            final int frm=start+(i*lng);
+            final String stmp=s.substring(frm,frm+lng);
+            System.out.println(stmp);
+
+            OldLog olo=new OldLog();
+
+
+            String srn=stmp.substring(4,8);
+            srn=srn.substring(2,4)+srn.substring(0,2);
+            final int srnm=Integer.parseInt(srn,16);
+            olo.logNo=srnm;
+
+            String cno=stmp.substring(12,18);
+            long lncrn=Long.parseLong(cno.substring(4,6)+cno.substring(2,4)+cno.substring(0,2),16);
+            olo.cardNo=String.valueOf(lncrn);
+            olo.doorNo=Integer.parseInt(stmp.substring(39,40));
+            String dttm="2d6e0010";//stmp.substring(28,36);
+
+
+            String tme=stmp.substring(32,36);
+            tme=String.valueOf(tme.charAt(3))+String.valueOf(tme.charAt(2))+String.valueOf(tme.charAt(1))+String.valueOf(tme.charAt(0));
+            long secs=Long.parseLong(tme,16);
+            double sss=secs*1.318359375;
+            int hr=(int)(sss/3600);
+            int mn=(int)(sss%3600)/60;
+            LocalTime tm=LocalTime.ofSecondOfDay((long)sss);
+
+
+
+            final long dttmStmp=Long.parseLong(dttm,16);
+            LocalDateTime dt=LocalDateTime.ofEpochSecond(dttmStmp,0, ZoneOffset.UTC);
+
+            System.out.println(olo.logNo+": "+"   tmstmp="+tme+"   "+frm+"   "+(frm+lng)+"    "+tme+":"+secs+"    y="+dt.getYear()+"  m="+dt.getMonthValue()+"  d="+dt.getDayOfMonth()+"  h="+tm.getHour()+"  m="+tm.getMinute()+"  s="+tm.getSecond());
+            log[i]=olo;
+        }
+        System.out.println("received value="+s);
+        for(OldLog st:log){
+            System.out.println(st.logNo+"     "+st.cardNo+"  "+st.doorNo+"   yr:"+st.year);
+        }
+
+
+        //0      7     11      17          27   31         39
+        //00006502__0000__f8f48c__0000000000-6e2d-010000"0"3"
     }
 
 
@@ -165,6 +233,19 @@ public class Test {
         return "2040b"+ds+"00000000000000"+serial+"0081020001000000ffffffffffffffff0"+door+"000000";
     }
 
+    static class OldLog{
+        int logNo=-1;
+        int doorNo=-1;
+        String cardNo="";
+        int year=-1;
+        int month=-1;
+        int day=-1;
+        int hour=-1;
+        int minute=-1;
+        int second=-1;
+        int status=-1;
+    }
+
 
 }
 
@@ -175,6 +256,10 @@ public class Test {
 //                2040b____c072b____00000000000000____e7813819____0081020001000000ffffffffffffffff0____3000000
 //monitor
 //                20201____45ddd____00000000000000____4aec5707____00000200ffffffff0____f000000
+
+
+//2021953f88020000e7813819000000006f060200__221115__02054117__00561d04000000000000904c006f020000020000000000000000000000f00000000000     ___00006e02__0000__f8f48c__0000000000-6f2d-4e2208"0"3"     ___00006d0200002e874200000000006f2d8320080300006c0200002e874200000000006f2dfab2080300006b0200002e874200000000006f2da6b2000300006a020000f8f48c00000000006f31c4a100030000690200005c926f00000000006f2fc2a108930000680200002e874200000000006f2985a10803000067020000f8f48c00000000006f2b38a10803000066020000f8f48c00000000006e2d61bf0003000065020000f8f48c00000000006e2d01000003000000000000000000000000000000000000120000000000000000000000110000004c0200000200000000000000f0ffff000000000000000000000000000000000000000000ff8fff1f1386ffcbff1fff0fff1b003e6f2b37a10000484541443e3c00000000000000000000000
+
 
 // 4 door time==0.0.2
 //2021075188020000e7813819000000002f060200__221114__01000042__000cc201000000000000904c0066020000020000000000000000000000f00000000000     ___00006502__0000__f8f48c__0000000000-6e2d-010000"0"3"     ___000064020000f8f48c00000000006e2d0b340003000063020000f8f48c00000000006e2df7330003000062020000f8f48c00000000006e2df0330803000061020000f8f48c00000000006e2dcf3308030000600200002e874200000000006e2df131080300005f0200002e874200000000006e2d9b2c080300005e020000f8f48c00000000006e2d7a2c080300005d020000f8f48c00000000006e2d072c000300005c0200002e874200000000006e2d4d2a0893000000000000000000000000000000000000120000000000000000000000090000004c0200000200000000000000f0ffff000000000000000000000000000000000000000000ff8fff1f1380ffcbff1fff0fff1b003e6e2d5d3200006520636f6e74
