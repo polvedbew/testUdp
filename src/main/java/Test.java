@@ -46,10 +46,11 @@ public class Test {
 
     private static final String four="e7813819";
     private static final String two="1a9e4d0d";
+    private static final String single="4aec5707";
     private static DatagramSocket socket;
 
     public static void main(String args[]) throws SocketException {
-        socket= new DatagramSocket(60000);
+        socket= new DatagramSocket();
 
         for(int i=0 ;i<20;i++){
             try{
@@ -63,9 +64,12 @@ public class Test {
 
     private static void start(){
        // String sec=getStatusString(4,four);
-        // String sec=getDoorOpenString(1,two);
+       //  String sec=getDoorOpenString(0,single);
       //   String sec=permissionQueryString(four,"f8f48c00");
-        String sec =setServer(four,"c0a80165","ea60");
+        //   String sec =setServer(single,"c0a80165","62ea");
+        String sec =setServer(four,"c0a80165","63ea");
+      //  String sec =setIPsetString(single,"c0a80166","ffffff00","c0a80101");
+     //   String sec =searchString();
         try {
 
             char[] chars = sec.toCharArray();
@@ -206,6 +210,10 @@ public class Test {
 
     }
 
+    private static String searchString(){
+        return "1794"+"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
+    }
+
     private static String setServer(final String serial,final String ip,final String port){
         return "17900000"+serial+ip+port+"05" +"00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
     }
@@ -250,6 +258,10 @@ public class Test {
 
 //2020__0b978802__000000000000__e7813819__00000200ffffffff0f000000
 
+
+    private static String setIPsetString(String serial,String ip,String mask,String gw){
+        return "17960000"+serial+ip+mask+gw+"55aaaa5500000000000000000000000000000000000000000000000000000000000000000000000000000000";
+    }
 
 
     private static String getDoorOpenString(int door, String serial){
